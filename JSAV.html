@@ -33,24 +33,25 @@ enableTooltipster();
 
     <script>
         function goBack() {
-            window.location.href = "https://fsnibs10.github.io/SOG/SOG_table.html";
+            window.location.href = "https://fsnibs10.github.io/SOG_alignment/";
         }
     </script>
-    <script>
-    function goUpper() {
-    window.history.back();
-    }
-    </script>
+
+
+
 
 </head>
 <body>
 
-<button onclick="goBack()">Back to SOG table</button>
-<button onclick="goUpper()">Back to SOG page</button>
+<button onclick="goBack()">Back to OG table</button>
 <br>
 <br>
 
-
+<script type='text/javascript'>
+function goBack() {
+    window.history.back();
+}
+</script>
 
 <script type='text/javascript'>
 
@@ -80,10 +81,15 @@ function alignmentTxtFileToObjectArray(fileAddress) {
 const urlParams = new URLSearchParams(window.location.search);
 const id = urlParams.get('id');
 const dataFilePath = `protein_einsi_alignment/${id}.AA.einsi.fasta`;
+const dataFilePathAll = `human_Sc/${id}.AA.einsi.fasta`;
 
 var MySeqs = alignmentTxtFileToObjectArray(dataFilePath)
+var MySeqs2 = alignmentTxtFileToObjectArray(dataFilePathAll)
 </script>
 
+
+
+<ul><li><p style="font-size: 20px;">Protein alignment for SOG genes</p></li></ul>
 
 <div id='sequenceDisplay'>
 </div>
@@ -136,5 +142,63 @@ printJSAV('sequenceDisplay', MySeqs, MyOptions);
 
 </script>
 <br>
+
+<!-- 灰色分隔线 -->
+<hr style="border: 0; height: 1px; background: #ccc; margin: 10px 0;">
+<ul><li><p style="font-size: 20px;">Protein alignment including the ortholog sequences from human or <em>Saccharomyces cerevisiae</em></p></li></ul>
+
+<div id='sequenceDisplay2'>
+</div>
+
+<script type='text/javascript'>
+var opts = Array();
+opts.sortable = true;
+opts.selectable = true;
+opts.deletable = true;
+opts.border = false;
+opts.toggleDotify = true;
+opts.toggleNocolour = true;
+opts.fasta = true;
+opts.consensus = true;
+opts.colourScheme = "zappo";
+opts.selectColour = true;
+opts.callback = "enableTooltipster";
+
+function myAction(divId, sequences)
+{
+   var seqString = "";
+   for(var i=0; i<sequences.length; i++)
+   {
+       seqString += ">" + sequences[i].id + "\n";
+       seqString += sequences[i].sequence + "\n";
+   }
+   alert(seqString);
+}
+
+var MyOptions = Array();
+MyOptions.sortable = true;
+MyOptions.selectable = true;
+MyOptions.deletable = true;
+MyOptions.scrollX = "100%";
+MyOptions.scrollY = "800px";
+MyOptions.highlight = [24,34];
+
+MyOptions.toggleDotify = true;
+MyOptions.toggleNocolour = true;
+MyOptions.fasta = true;
+MyOptions.consensus = true;
+MyOptions.colourScheme = "zappo";
+MyOptions.selectColour = true;
+MyOptions.callback = "enableTooltipster";
+MyOptions.idSubmit = "http://www.bioinf.org.uk/software/jsav/echo.cgi?seq=";
+MyOptions.idSubmitClean = true;
+
+printJSAV('sequenceDisplay2', MySeqs2, MyOptions);
+
+
+</script>
+<br>
+
+
 </body>
 </html>
