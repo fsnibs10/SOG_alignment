@@ -94,6 +94,10 @@ var MySeqs2 = alignmentTxtFileToObjectArray(dataFilePathAll)
 <div id='sequenceDisplay'>
 </div>
 
+<!-- optional display box for the ungapped coordinate -->
+<div id="coordBox" style="margin-top:8px;font-family:sans-serif;">Click a residue</div>
+
+
 <script type='text/javascript'>
 var opts = Array();
 opts.sortable = true;
@@ -134,22 +138,142 @@ MyOptions.consensus = true;
 MyOptions.colourScheme = "zappo";
 MyOptions.selectColour = true;
 MyOptions.callback = "enableTooltipster";
+
 MyOptions.idSubmit = "http://www.bioinf.org.uk/software/jsav/echo.cgi?seq=";
 MyOptions.idSubmitClean = true;
 
+MyOptions.labels = JSAV_autoLabels(MySeqs);
 printJSAV('sequenceDisplay', MySeqs, MyOptions);
+
+// Hover-enabled residue coordinate display for JSAV (replaces the click-based handler)
+(function() {
+  var container = document.getElementById('sequenceDisplay');
+  if (!container) return;
+
+  var coordBox = document.getElementById('coordBox');
+  if (!coordBox) {
+    // create if missing
+    coordBox = document.createElement('div');
+    coordBox.id = 'coordBox';
+    coordBox.style.marginTop = '8px';
+    coordBox.style.fontFamily = 'sans-serif';
+    container.parentNode.insertBefore(coordBox, container.nextSibling);
+  }
+
+  var DEFAULT_MSG = 'Hover the mouse over a residue to display the coordinate of the amino acid';
+  var gapChars = ['-','.']; // adjust if you want '.' to count as residues
+  coordBox.textContent = DEFAULT_MSG;
+
+  // helper to test whether an element looks like a residue cell
+  function isResidueCell(el) {
+    if (!el || el.nodeType !== 1) return false;
+    var txt = (el.textContent || '').trim();
+    return txt.length === 1 && /^[A-Za-z.\-]$/.test(txt);
+  }
+
+  var lastSeenCell = null;
+
+  function showForCell(cell, ev) {
+    if (!cell || cell === lastSeenCell) return;
+    lastSeenCell = cell;
+
+    // find row
+    var row = cell.parentElement;
+    if (!row) return;
+
+    var children = Array.prototype.slice.call(row.children);
+
+    // identify residue cells in this row by heuristic (single-character cells)
+    var residueCells = children.filter(function(td) {
+      var txt = (td.textContent || '').trim();
+      return txt.length === 1 && /^[A-Za-z.\-]$/.test(txt);
+    });
+
+    if (residueCells.length === 0) return;
+
+    // find column index
+    var colIndex = residueCells.indexOf(cell);
+    if (colIndex === -1) {
+      for (var i = 0; i < residueCells.length; i++) {
+        if (residueCells[i].contains(cell)) { colIndex = i; cell = residueCells[i]; break; }
+      }
+    }
+    if (colIndex === -1) return;
+
+    // build visible sequence string for the row
+    var seqArr = residueCells.map(function(td) { return (td.textContent || '').trim().charAt(0) || '-'; });
+    var seqStr = seqArr.join('');
+
+    // compute ungapped position (1-based) up to and including colIndex
+    var ungappedCount = 0;
+    for (var k = 0; k <= colIndex; k++) {
+      var ch = seqStr.charAt(k);
+      var isGap = gapChars.indexOf(ch) !== -1;
+      if (!isGap) ungappedCount++;
+    }
+    var ungappedPos = ungappedCount; // may be 0 if all gaps up to clicked column
+
+    // get sequence id / name from the row (best-effort)
+    var name = null;
+    var idCell = row.querySelector('.idCell, .id, th, td');
+    if (idCell) {
+      // prefer leftmost non-residue cell as id if it's before residue cells
+      // find first child that is not one of the residueCells
+      for (var j = 0; j < children.length; j++) {
+        if (residueCells.indexOf(children[j]) === -1) {
+          var candidate = (children[j].textContent || '').trim();
+          if (candidate.length > 0) { name = candidate; break; }
+        }
+      }
+    }
+    if (!name) name = 'Sequence';
+
+    // update display: "Gene2: amino acid 3"
+    var posText = ungappedPos > 0 ? ungappedPos : '-';
+    coordBox.textContent = name + ': amino acid ' + posText;
+  }
+
+  function resetDisplay() {
+    lastSeenCell = null;
+    coordBox.textContent = DEFAULT_MSG;
+  }
+
+  // Use mousemove to track current element below cursor; mouseleave resets the display.
+  container.addEventListener('mousemove', function(ev) {
+    var el = ev.target;
+    // find the closest residue-like element up the chain but not beyond container
+    while (el && el !== container && !isResidueCell(el)) {
+      el = el.parentElement;
+    }
+    if (el && el !== container && isResidueCell(el)) {
+      showForCell(el, ev);
+    } else {
+      // if cursor not on a residue cell, reset the display
+      if (lastSeenCell) resetDisplay();
+    }
+  });
+
+  container.addEventListener('mouseleave', function() {
+    resetDisplay();
+  });
+
+})();
 
 
 </script>
 <br>
 
-<!-- 灰色分隔线 -->
+<!-- 灰色分隔线------------------------------- -->
 <hr style="border: 0; height: 1px; background: #ccc; margin: 10px 0;">
 <ul><li><p style="font-size: 20px;">Protein alignment including the ortholog sequences from human or <em>Saccharomyces cerevisiae</em></p></li></ul>
 
 <div id='sequenceDisplay2'>
 </div>
 
+<!-- optional display box for the ungapped coordinate -->
+<div id="coordBox2" style="margin-top:8px;font-family:sans-serif;">Click a residue</div>
+
+
 <script type='text/javascript'>
 var opts = Array();
 opts.sortable = true;
@@ -175,25 +299,142 @@ function myAction(divId, sequences)
    alert(seqString);
 }
 
-var MyOptions = Array();
-MyOptions.sortable = true;
-MyOptions.selectable = true;
-MyOptions.deletable = true;
-MyOptions.scrollX = "100%";
-MyOptions.scrollY = "800px";
-MyOptions.highlight = [24,34];
+var MyOptions2 = Array();
+MyOptions2.sortable = true;
+MyOptions2.selectable = true;
+MyOptions2.deletable = true;
+MyOptions2.scrollX = "100%";
+MyOptions2.scrollY = "800px";
+MyOptions2.highlight = [24,34];
 
-MyOptions.toggleDotify = true;
-MyOptions.toggleNocolour = true;
-MyOptions.fasta = true;
-MyOptions.consensus = true;
-MyOptions.colourScheme = "zappo";
-MyOptions.selectColour = true;
-MyOptions.callback = "enableTooltipster";
-MyOptions.idSubmit = "http://www.bioinf.org.uk/software/jsav/echo.cgi?seq=";
-MyOptions.idSubmitClean = true;
+MyOptions2.toggleDotify = true;
+MyOptions2.toggleNocolour = true;
+MyOptions2.fasta = true;
+MyOptions2.consensus = true;
+MyOptions2.colourScheme = "zappo";
+MyOptions2.selectColour = true;
+MyOptions2.callback = "enableTooltipster";
 
-printJSAV('sequenceDisplay2', MySeqs2, MyOptions);
+MyOptions2.idSubmit = "http://www.bioinf.org.uk/software/jsav/echo.cgi?seq=";
+MyOptions2.idSubmitClean = true;
+MyOptions2.labels = JSAV_autoLabels(MySeqs2);
+printJSAV('sequenceDisplay2', MySeqs2, MyOptions2);
+
+// Hover-enabled residue coordinate display for JSAV (replaces the click-based handler)
+(function() {
+  var container = document.getElementById('sequenceDisplay2');
+  if (!container) return;
+
+  var coordBox = document.getElementById('coordBox2');
+  if (!coordBox) {
+    // create if missing
+    coordBox = document.createElement('div');
+    coordBox.id = 'coordBox2';
+    coordBox.style.marginTop = '8px';
+    coordBox.style.fontFamily = 'sans-serif';
+    container.parentNode.insertBefore(coordBox, container.nextSibling);
+  }
+
+  var DEFAULT_MSG = 'Hover the mouse over a residue to display the coordinate of the amino acid';
+  var gapChars = ['-','.']; // adjust if you want '.' to count as residues
+  coordBox.textContent = DEFAULT_MSG;
+
+  // helper to test whether an element looks like a residue cell
+  function isResidueCell(el) {
+    if (!el || el.nodeType !== 1) return false;
+    var txt = (el.textContent || '').trim();
+    return txt.length === 1 && /^[A-Za-z.\-]$/.test(txt);
+  }
+
+  var lastSeenCell = null;
+
+  function showForCell(cell, ev) {
+    if (!cell || cell === lastSeenCell) return;
+    lastSeenCell = cell;
+
+    // find row
+    var row = cell.parentElement;
+    if (!row) return;
+
+    var children = Array.prototype.slice.call(row.children);
+
+    // identify residue cells in this row by heuristic (single-character cells)
+    var residueCells = children.filter(function(td) {
+      var txt = (td.textContent || '').trim();
+      return txt.length === 1 && /^[A-Za-z.\-]$/.test(txt);
+    });
+
+    if (residueCells.length === 0) return;
+
+    // find column index
+    var colIndex = residueCells.indexOf(cell);
+    if (colIndex === -1) {
+      for (var i = 0; i < residueCells.length; i++) {
+        if (residueCells[i].contains(cell)) { colIndex = i; cell = residueCells[i]; break; }
+      }
+    }
+    if (colIndex === -1) return;
+
+    // build visible sequence string for the row
+    var seqArr = residueCells.map(function(td) { return (td.textContent || '').trim().charAt(0) || '-'; });
+    var seqStr = seqArr.join('');
+
+    // compute ungapped position (1-based) up to and including colIndex
+    var ungappedCount = 0;
+    for (var k = 0; k <= colIndex; k++) {
+      var ch = seqStr.charAt(k);
+      var isGap = gapChars.indexOf(ch) !== -1;
+      if (!isGap) ungappedCount++;
+    }
+    var ungappedPos = ungappedCount; // may be 0 if all gaps up to clicked column
+
+    // get sequence id / name from the row (best-effort)
+    var name = null;
+    var idCell = row.querySelector('.idCell, .id, th, td');
+    if (idCell) {
+      // prefer leftmost non-residue cell as id if it's before residue cells
+      // find first child that is not one of the residueCells
+      for (var j = 0; j < children.length; j++) {
+        if (residueCells.indexOf(children[j]) === -1) {
+          var candidate = (children[j].textContent || '').trim();
+          if (candidate.length > 0) { name = candidate; break; }
+        }
+      }
+    }
+    if (!name) name = 'Sequence';
+
+    // update display: "Gene2: amino acid 3"
+    var posText = ungappedPos > 0 ? ungappedPos : '-';
+    coordBox.textContent = name + ': amino acid ' + posText;
+  }
+
+  function resetDisplay() {
+    lastSeenCell = null;
+    coordBox.textContent = DEFAULT_MSG;
+  }
+
+  // Use mousemove to track current element below cursor; mouseleave resets the display.
+  container.addEventListener('mousemove', function(ev) {
+    var el = ev.target;
+    // find the closest residue-like element up the chain but not beyond container
+    while (el && el !== container && !isResidueCell(el)) {
+      el = el.parentElement;
+    }
+    if (el && el !== container && isResidueCell(el)) {
+      showForCell(el, ev);
+    } else {
+      // if cursor not on a residue cell, reset the display
+      if (lastSeenCell) resetDisplay();
+    }
+  });
+
+  container.addEventListener('mouseleave', function() {
+    resetDisplay();
+  });
+
+})();
+
+
 
 
 </script>
