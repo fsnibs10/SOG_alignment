@@ -596,7 +596,7 @@ function JSAV_exportFASTA(divId)
 {
    var sequenceText = JSAV_buildFASTA(divId);
 
-   ACRM_dialog("FASTA Export", sequenceText, 600, true);
+   ACRM_dialog("FASTA Export", sequenceText, 600, true, divId);
 }
 
 // ---------------------------------------------------------------------
@@ -2599,7 +2599,7 @@ General purpose dialogue using JQueryUI dialog
 @author 
 - 17.06.14 Original   By: ACRM
 */
-function ACRM_dialog(title, msg, width, pre) 
+function ACRM_dialog(title, msg, width, pre, divId) 
 {
     var dialogObj;
     if(pre)
@@ -2615,7 +2615,7 @@ function ACRM_dialog(title, msg, width, pre)
         resizable: false,
         width: width,
         modal: true,
-        buttons: { "Download": function() { var urlParams = new URLSearchParams(window.location.search); var id = urlParams.get("id"); var filename = "alignment.fasta"; if (id) { filename = id + ".amino_acid_alignment.fasta"; } var blob = new Blob([msg], { type: "text/plain" }); var link = document.createElement("a"); link.href = window.URL.createObjectURL(blob); link.download = filename; document.body.appendChild(link); link.click(); document.body.removeChild(link); $( this ).dialog( "close" ); $( this ).remove(); } }
+        buttons: { "Download": function() { var urlParams = new URLSearchParams(window.location.search); var id = urlParams.get("id"); var filename = "alignment.fasta"; if (id) { filename = id + ".amino_acid_alignment"; if (divId && divId.slice(-1) == "2") { filename += "_AndOtherOrthologSeq"; } filename += ".fasta"; } var blob = new Blob([msg], { type: "text/plain" }); var link = document.createElement("a"); link.href = window.URL.createObjectURL(blob); link.download = filename; document.body.appendChild(link); link.click(); document.body.removeChild(link); $( this ).dialog( "close" ); $( this ).remove(); } }
     });
 };
 
@@ -3422,5 +3422,6 @@ return(html);
 }
 
 // --------------------- END OF FILE ------------------------------------
+
 
 
